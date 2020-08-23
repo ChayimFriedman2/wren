@@ -105,6 +105,7 @@ typedef enum
   TOKEN_TRUE,
   TOKEN_VAR,
   TOKEN_WHILE,
+  TOKEN_REVERSE,
 
   TOKEN_FIELD,
   TOKEN_STATIC_FIELD,
@@ -585,6 +586,7 @@ static Keyword keywords[] =
   {"true",      4, TOKEN_TRUE},
   {"var",       3, TOKEN_VAR},
   {"while",     5, TOKEN_WHILE},
+  {"reverse",   7, TOKEN_REVERSE},
   {NULL,        0, TOKEN_EOF} // Sentinel to mark the end of the array.
 };
 
@@ -2639,6 +2641,7 @@ GrammarRule rules[] =
   /* TOKEN_TRUE          */ PREFIX(boolean),
   /* TOKEN_VAR           */ UNUSED,
   /* TOKEN_WHILE         */ UNUSED,
+  /* TOKEN_REVERSE       */ UNUSED,
   /* TOKEN_FIELD         */ PREFIX(field),
   /* TOKEN_STATIC_FIELD  */ PREFIX(staticField),
   /* TOKEN_NAME          */ { name, NULL, namedSignature, PREC_NONE, NULL },
