@@ -2710,6 +2710,7 @@ static int getByteCountForArguments(const uint8_t* bytecode,
     case CODE_POP:
     case CODE_CLOSE_UPVALUE:
     case CODE_RETURN:
+    case CODE_BINOP_RETURN:
     case CODE_END:
     case CODE_LOAD_LOCAL_0:
     case CODE_LOAD_LOCAL_1:
@@ -2785,6 +2786,7 @@ static int getByteCountForArguments(const uint8_t* bytecode,
     case CODE_SUPER_14:
     case CODE_SUPER_15:
     case CODE_SUPER_16:
+    case CODE_BINOP_CALL:
       return 4;
 
     case CODE_CLOSURE:

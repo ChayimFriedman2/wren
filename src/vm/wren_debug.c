@@ -205,6 +205,15 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
       break;
     }
 
+    case CODE_BINOP_CALL:
+    {
+      int symbol = READ_SHORT();
+      int reverseSymbol = READ_SHORT();
+      printf("BINOP_CALL       %5d %5d '%s'\n", symbol, reverseSymbol,
+             vm->methodNames.data[symbol]->value);
+      break;
+    }
+
     case CODE_SUPER_0:
     case CODE_SUPER_1:
     case CODE_SUPER_2:
@@ -268,6 +277,7 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
 
     case CODE_CLOSE_UPVALUE: printf("CLOSE_UPVALUE\n"); break;
     case CODE_RETURN:        printf("RETURN\n"); break;
+    case CODE_BINOP_RETURN:  printf("BINOP_RETURN\n"); break;
 
     case CODE_CLOSURE:
     {

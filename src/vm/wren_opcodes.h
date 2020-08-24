@@ -97,6 +97,11 @@ OPCODE(CALL_14, -14)
 OPCODE(CALL_15, -15)
 OPCODE(CALL_16, -16)
 
+// Invokes the binary operator with symbol [arg]. Its reverse operator's symbol
+// is stored in [arg2]. Before invocation, we need to duplicate the args
+// (top 2 stack slots) for case of returning System.notImplemented.
+OPCODE(BINOP_CALL, -1)
+
 // Invoke a superclass method with symbol [arg]. The number indicates the
 // number of arguments (not including the receiver).
 OPCODE(SUPER_0, 0)
@@ -140,6 +145,11 @@ OPCODE(CLOSE_UPVALUE, -1)
 // Exit from the current function and return the value on the top of the
 // stack.
 OPCODE(RETURN, 0)
+
+// Similar to RETURN, but handles binary operators. The reason they need
+// their own opcode is that they have special things to do in case of
+// returning System.notImplemented.
+OPCODE(BINOP_RETURN, 0)
 
 // Creates a closure for the function stored at [arg] in the constant table.
 //
