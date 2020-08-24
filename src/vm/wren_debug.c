@@ -79,22 +79,24 @@ void wrenDumpValue(Value value)
   {
     switch (GET_TAG(value))
     {
-      case TAG_FALSE:     printf("false"); break;
-      case TAG_NAN:       printf("NaN"); break;
-      case TAG_NULL:      printf("null"); break;
-      case TAG_TRUE:      printf("true"); break;
-      case TAG_UNDEFINED: UNREACHABLE();
+      case TAG_FALSE:           printf("false"); break;
+      case TAG_NAN:             printf("NaN"); break;
+      case TAG_NULL:            printf("null"); break;
+      case TAG_NOT_IMPLEMENTED: printf("System.notImplemented"); break;
+      case TAG_TRUE:            printf("true"); break;
+      case TAG_UNDEFINED:       UNREACHABLE();
     }
   }
 #else
   switch (value.type)
   {
-    case VAL_FALSE:     printf("false"); break;
-    case VAL_NULL:      printf("null"); break;
-    case VAL_NUM:       printf("%.14g", AS_NUM(value)); break;
-    case VAL_TRUE:      printf("true"); break;
-    case VAL_OBJ:       dumpObject(AS_OBJ(value)); break;
-    case VAL_UNDEFINED: UNREACHABLE();
+    case VAL_FALSE:           printf("false"); break;
+    case VAL_NULL:            printf("null"); break;
+    case VAL_NOT_IMPLEMENTED: printf("System.notImplemented"); break;
+    case VAL_NUM:             printf("%.14g", AS_NUM(value)); break;
+    case VAL_TRUE:            printf("true"); break;
+    case VAL_OBJ:             dumpObject(AS_OBJ(value)); break;
+    case VAL_UNDEFINED:       UNREACHABLE();
   }
 #endif
 }

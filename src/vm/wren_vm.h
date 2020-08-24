@@ -37,6 +37,7 @@ struct WrenVM
   ObjClass* listClass;
   ObjClass* mapClass;
   ObjClass* nullClass;
+  ObjClass* notImplementedClass;
   ObjClass* numClass;
   ObjClass* objectClass;
   ObjClass* rangeClass;
@@ -214,21 +215,23 @@ static inline ObjClass* wrenGetClassInline(WrenVM* vm, Value value)
 #if WREN_NAN_TAGGING
   switch (GET_TAG(value))
   {
-    case TAG_FALSE:     return vm->boolClass; break;
-    case TAG_NAN:       return vm->numClass; break;
-    case TAG_NULL:      return vm->nullClass; break;
-    case TAG_TRUE:      return vm->boolClass; break;
-    case TAG_UNDEFINED: UNREACHABLE();
+    case TAG_FALSE:           return vm->boolClass; break;
+    case TAG_NAN:             return vm->numClass; break;
+    case TAG_NULL:            return vm->nullClass; break;
+    case TAG_NOT_IMPLEMENTED: return vm->notImplementedClass; break;
+    case TAG_TRUE:            return vm->boolClass; break;
+    case TAG_UNDEFINED:       UNREACHABLE();
   }
 #else
   switch (value.type)
   {
-    case VAL_FALSE:     return vm->boolClass;
-    case VAL_NULL:      return vm->nullClass;
-    case VAL_NUM:       return vm->numClass;
-    case VAL_TRUE:      return vm->boolClass;
-    case VAL_OBJ:       return AS_OBJ(value)->classObj;
-    case VAL_UNDEFINED: UNREACHABLE();
+    case VAL_FALSE:           return vm->boolClass;
+    case VAL_NULL:            return vm->nullClass;
+    case VAL_NOT_IMPLEMENTED: return vm->notImplementedClass;
+    case VAL_NUM:             return vm->numClass;
+    case VAL_TRUE:            return vm->boolClass;
+    case VAL_OBJ:             return AS_OBJ(value)->classObj;
+    case VAL_UNDEFINED:       UNREACHABLE();
   }
 #endif
 

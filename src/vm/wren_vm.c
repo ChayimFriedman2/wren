@@ -1603,6 +1603,7 @@ WrenType wrenGetSlotType(WrenVM* vm, int slot)
   if (IS_LIST(vm->apiStack[slot])) return WREN_TYPE_LIST;
   if (IS_MAP(vm->apiStack[slot])) return WREN_TYPE_MAP;
   if (IS_NULL(vm->apiStack[slot])) return WREN_TYPE_NULL;
+  if (IS_NOT_IMPLEMENTED(vm->apiStack[slot])) return WREN_TYPE_NOT_IMPLEMENTED;
   if (IS_STRING(vm->apiStack[slot])) return WREN_TYPE_STRING;
   
   return WREN_TYPE_UNKNOWN;
@@ -1708,6 +1709,11 @@ void wrenSetSlotNewMap(WrenVM* vm, int slot)
 void wrenSetSlotNull(WrenVM* vm, int slot)
 {
   setSlot(vm, slot, NULL_VAL);
+}
+
+void wrenSetSlotNotImplemented(WrenVM* vm, int slot)
+{
+  setSlot(vm, slot, NOT_IMPLEMENTED_VAL);
 }
 
 void wrenSetSlotString(WrenVM* vm, int slot, const char* text)

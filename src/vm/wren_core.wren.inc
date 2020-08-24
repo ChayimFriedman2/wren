@@ -1,9 +1,10 @@
-// Generated automatically from src/vm/wren_core.wren. Do not edit.
+// Generated automatically from .\src\vm\wren_core.wren. Do not edit.
 static const char* coreModuleSource =
 "class Bool {}\n"
 "class Fiber {}\n"
 "class Fn {}\n"
 "class Null {}\n"
+"class NotImplemented {}\n"
 "class Num {}\n"
 "\n"
 "class Sequence {\n"

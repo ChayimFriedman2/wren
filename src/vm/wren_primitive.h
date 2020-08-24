@@ -29,12 +29,13 @@
       return true;                                                             \
     } while (false)
 
-#define RETURN_OBJ(obj)     RETURN_VAL(OBJ_VAL(obj))
-#define RETURN_BOOL(value)  RETURN_VAL(BOOL_VAL(value))
-#define RETURN_FALSE        RETURN_VAL(FALSE_VAL)
-#define RETURN_NULL         RETURN_VAL(NULL_VAL)
-#define RETURN_NUM(value)   RETURN_VAL(NUM_VAL(value))
-#define RETURN_TRUE         RETURN_VAL(TRUE_VAL)
+#define RETURN_OBJ(obj)        RETURN_VAL(OBJ_VAL(obj))
+#define RETURN_BOOL(value)     RETURN_VAL(BOOL_VAL(value))
+#define RETURN_FALSE           RETURN_VAL(FALSE_VAL)
+#define RETURN_NULL            RETURN_VAL(NULL_VAL)
+#define RETURN_NOT_IMPLEMENTED RETURN_VAL(NOT_IMPLEMENTED_VAL)
+#define RETURN_NUM(value)      RETURN_VAL(NUM_VAL(value))
+#define RETURN_TRUE            RETURN_VAL(TRUE_VAL)
 
 #define RETURN_ERROR(msg)                                                      \
     do                                                                         \

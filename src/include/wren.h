@@ -265,6 +265,7 @@ typedef enum
   WREN_TYPE_LIST,
   WREN_TYPE_MAP,
   WREN_TYPE_NULL,
+  WREN_TYPE_NOT_IMPLEMENTED,
   WREN_TYPE_STRING,
 
   // The object is of a type that isn't accessible by the C API.
@@ -446,6 +447,9 @@ void wrenSetSlotNewMap(WrenVM* vm, int slot);
 
 // Stores null in [slot].
 void wrenSetSlotNull(WrenVM* vm, int slot);
+
+// Stores System.notImplemented in [slot].
+void wrenSetSlotNotImplemented(WrenVM* vm, int slot);
 
 // Stores the string [text] in [slot].
 //

@@ -569,6 +569,86 @@ DEF_PRIMITIVE(null_toString)
   RETURN_VAL(CONST_STRING(vm, "null"));
 }
 
+DEF_PRIMITIVE(notImplemented_not)
+{
+  // This method does not touch the return value slot, and so it returns
+  // as-is - containing the receiver (System.notImplemented).
+  // Why do we want the expression !System.notImplemented (not System.notImplemented)
+  // to return System.notImplemented? Isn't it counter-intuitive?
+  // Imagine the following scenario: you got a task - to implement a class "Task".
+  // each task has two properties: [name] and [isDone], and need to support equality
+  // check.
+  // Because you're a good programmer (hopefully ;)), you don't want to duplicate
+  // the comparison code in both ==(_) and !=(_). Instead, you do the following thing:
+  //
+  //     class Task {
+  //       construct new(name, isDone) {
+  //         _name = name
+  //         _isDone = isDone
+  //       }
+  //
+  //       name { _name }
+  //       isDone { _isDone }
+  //       isDone=(value) { _isDone = value }
+  //
+  //       ==(other) { _name == other.name }
+  //       !=(other) { !this.==(other) }
+  //     }
+  //
+  // But then, during the code review, a teammate says, "Hey, your Task.==(_)
+  // method doesn't check that it got a Task object! Good Wren code should return
+  // System.notImplemented if this is not the case!"
+  // Oh right. Luckily, you wrote the code without duplicates (good programmer,
+  // did we already say?). Rewriting is easy:
+  //
+  //     class Task {
+  //       construct new(name, isDone) {
+  //         _name = name
+  //         _isDone = isDone
+  //       }
+  //
+  //       name { _name }
+  //       isDone { _isDone }
+  //       isDone=(value) { _isDone = value }
+  //
+  //       ==(other) {
+  //         if (!(other is Task)) return System.notImplemented
+  //
+  //         return _name == other.name
+  //       }
+  //       !=(other) { !this.==(other) }
+  //     }
+  //
+  // However, this code contains a bug. Can you find it? Hint: what
+  // will happen when evaluating the expression Task != NonTask?
+  //
+  // Result: false! Why? let's trace the evaluation:
+  //
+  //  1. Call Task.!=(NonTask):
+  //    1. Call Task.==(NonTask):
+  //      1. Is NonTask a task? Nope - return System.notImplemented.
+  //    2. Negate the result: everything except null and false is truthy -
+  //       negating it is falsy.
+  //    3. Return the result (false).
+  //  2. Is the result (false) System.notImplemented? Nope - end up with it.
+  //
+  // And we're getting false!
+  // The solution is to make negating System.notImplemented returning itself:
+  //
+  //  1. Call Task.!=(NonTask):
+  //    1. Call Task.==(NonTask):
+  //      1. Is NonTask a task? Nope - return System.notImplemented.
+  //    2. Negate the result: negating System.notImplemented returns itself.
+  //    3. Return the result (false).
+  //  2. Is the result (System.notImplemented) System.notImplemented? Yes:
+  //     call NonTask.reverse !=(Task) et cetera.
+}
+
+DEF_PRIMITIVE(notImplemented_toString)
+{
+  RETURN_VAL(CONST_STRING(vm, "System.notImplemented"));
+}
+
 DEF_PRIMITIVE(num_fromString)
 {
   if (!validateString(vm, args[1], "Argument")) return false;
@@ -1134,6 +1214,11 @@ DEF_PRIMITIVE(system_gc)
   RETURN_NULL;
 }
 
+DEF_PRIMITIVE(system_notImplemented)
+{
+  RETURN_NOT_IMPLEMENTED;
+}
+
 DEF_PRIMITIVE(system_writeString)
 {
   if (vm->config.writeFn != NULL)
@@ -1270,6 +1355,10 @@ void wrenInitializeCore(WrenVM* vm)
   PRIMITIVE(vm->nullClass, "!", null_not);
   PRIMITIVE(vm->nullClass, "toString", null_toString);
 
+  vm->notImplementedClass = AS_CLASS(wrenFindVariable(vm, coreModule, "NotImplemented"));
+  PRIMITIVE(vm->nullClass, "!", notImplemented_not);
+  PRIMITIVE(vm->nullClass, "toString", notImplemented_toString);
+
   vm->numClass = AS_CLASS(wrenFindVariable(vm, coreModule, "Num"));
   PRIMITIVE(vm->numClass->obj.classObj, "fromString(_)", num_fromString);
   PRIMITIVE(vm->numClass->obj.classObj, "pi", num_pi);
@@ -1381,6 +1470,7 @@ void wrenInitializeCore(WrenVM* vm)
   PRIMITIVE(systemClass->obj.classObj, "clock", system_clock);
   PRIMITIVE(systemClass->obj.classObj, "gc()", system_gc);
   PRIMITIVE(systemClass->obj.classObj, "writeString_(_)", system_writeString);
+  PRIMITIVE(systemClass->obj.classObj, "notImplemented", system_notImplemented);
 
   // While bootstrapping the core types and running the core module, a number
   // of string objects have been created, many of which were instantiated

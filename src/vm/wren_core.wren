@@ -2,6 +2,7 @@ class Bool {}
 class Fiber {}
 class Fn {}
 class Null {}
+class NotImplemented {}
 class Num {}
 
 class Sequence {
