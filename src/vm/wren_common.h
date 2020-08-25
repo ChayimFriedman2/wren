@@ -92,14 +92,21 @@
 
 // The maximum length of a method signature. Signatures look like:
 //
-//     foo        // Getter.
-//     foo()      // No-argument method.
-//     foo(_)     // One-argument method.
-//     foo(_,_)   // Two-argument method.
-//     init foo() // Constructor initializer.
+//     foo         // Getter.
+//     foo()       // No-argument method.
+//     foo(_)      // One-argument method.
+//     foo(_,_)    // Two-argument method.
+//     init foo()  // Constructor initializer.
+//     reverse *() // Reverse operator.
 //
 // The maximum signature length takes into account the longest method name, the
 // maximum number of parameters with separators between them, "init ", and "()".
+// Although "reverse " is longer than "init ", we calculate the maximum via
+// the latter. This is because "reverse " can only appear with binary operators,
+// and they have exactly one parameter, while "init " can have up to MAX_PARAMETERS
+// parameters. As long as MAX_PARAMETERS is greater than 2, we can relax (1
+// binary operators also have, each parameter occupies 2 characters and
+// "reverse " is 3 characters longer than "init ").
 #define MAX_METHOD_SIGNATURE (MAX_METHOD_NAME + (MAX_PARAMETERS * 2) + 6)
 
 // The maximum length of an identifier. The only real reason for this limitation

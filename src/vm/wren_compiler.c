@@ -284,6 +284,9 @@ typedef struct
   int length;
   SignatureType type;
   int arity;
+  bool isBinaryOp;
+  // For binary operators, states whether this is a reverse operator.
+  bool isReverse;
 } Signature;
 
 // Bookkeeping information for compiling a class definition.
@@ -1230,6 +1233,16 @@ static void emitConstant(Compiler* compiler, Value value)
   emitShortArg(compiler, CODE_CONSTANT, constant);
 }
 
+// Emit the appropriate RETURN opcode for the current context. It's CODE_RETURN
+// for ordinary methods (and functions) and CODE_BINOP_RETURN for binary operators.
+static void emitReturn(Compiler* compiler)
+{
+  bool isBinaryOp = compiler->parent != NULL &&
+                    compiler->parent->enclosingClass != NULL &&
+                    compiler->parent->enclosingClass->signature->isBinaryOp;
+  emitOp(compiler, !isBinaryOp ? CODE_RETURN : CODE_BINOP_RETURN);
+}
+
 // Create a new local variable with [name]. Assumes the current scope is local
 // and the name is unique.
 static int addLocal(Compiler* compiler, const char* name, int length)
@@ -1672,7 +1685,7 @@ static void finishBody(Compiler* compiler, bool isInitializer)
     emitOp(compiler, CODE_NULL);
   }
 
-  emitOp(compiler, CODE_RETURN);
+  emitReturn(compiler);
 }
 
 // The VM can only handle a certain number of parameters, so check that we
@@ -1734,6 +1747,12 @@ static void signatureToString(Signature* signature,
                               char name[MAX_METHOD_SIGNATURE], int* length)
 {
   *length = 0;
+
+  if (signature->isReverse)
+  {
+    memcpy(name + *length, "reverse ", 8);
+    *length += 8;
+  }
 
   // Build the full name from the signature.
   memcpy(name + *length, signature->name, signature->length);
@@ -1797,6 +1816,8 @@ static Signature signatureFromToken(Compiler* compiler, SignatureType type)
   signature.length = token->length;
   signature.type = type;
   signature.arity = 0;
+  signature.isBinaryOp = false;
+  signature.isReverse = false;
 
   if (signature.length > MAX_METHOD_NAME)
   {
@@ -1829,7 +1850,10 @@ static void callSignature(Compiler* compiler, Code instruction,
                           Signature* signature)
 {
   int symbol = signatureSymbol(compiler, signature);
-  emitShortArg(compiler, (Code)(instruction + signature->arity), symbol);
+  Code actualInstruction = instruction != CODE_BINOP_CALL ?
+                           (Code)(instruction + signature->arity) :
+                           instruction;
+  emitShortArg(compiler, actualInstruction, symbol);
 
   if (instruction == CODE_SUPER_0)
   {
@@ -1842,6 +1866,13 @@ static void callSignature(Compiler* compiler, Code instruction,
     // table and store NULL in it. When the method is bound, we'll look up the
     // superclass then and store it in the constant slot.
     emitShort(compiler, addConstant(compiler, NULL_VAL));
+  }
+
+  if (instruction == CODE_BINOP_CALL)
+  {
+    // Also store the reverse symbol.
+    signature->isReverse = true;
+    emitShort(compiler, signatureSymbol(compiler, signature));
   }
 }
 
@@ -1860,7 +1891,7 @@ static void methodCall(Compiler* compiler, Code instruction,
 {
   // Make a new signature that contains the updated arity and type based on
   // the arguments we find.
-  Signature called = { signature->name, signature->length, SIG_GETTER, 0 };
+  Signature called = { signature->name, signature->length, SIG_GETTER, 0, false };
 
   // Parse the argument list, if any.
   if (match(compiler, TOKEN_LEFT_PAREN))
@@ -1886,7 +1917,7 @@ static void methodCall(Compiler* compiler, Code instruction,
     initCompiler(&fnCompiler, compiler->parser, compiler, false);
 
     // Make a dummy signature to track the arity.
-    Signature fnSignature = { "", 0, SIG_METHOD, 0 };
+    Signature fnSignature = { "", 0, SIG_METHOD, 0, false };
 
     // Parse the parameter list, if any.
     if (match(compiler, TOKEN_PIPE))
@@ -2352,7 +2383,7 @@ static void this_(Compiler* compiler, bool canAssign)
 // Subscript or "array indexing" operator like `foo[bar]`.
 static void subscript(Compiler* compiler, bool canAssign)
 {
-  Signature signature = { "", 0, SIG_SUBSCRIPT, 0 };
+  Signature signature = { "", 0, SIG_SUBSCRIPT, 0, false };
 
   // Parse the argument list.
   finishArgumentList(compiler, &signature);
@@ -2435,8 +2466,8 @@ void infixOp(Compiler* compiler, bool canAssign)
   parsePrecedence(compiler, (Precedence)(rule->precedence + 1));
 
   // Call the operator method on the left-hand side.
-  Signature signature = { rule->name, (int)strlen(rule->name), SIG_METHOD, 1 };
-  callSignature(compiler, CODE_CALL_0, &signature);
+  Signature signature = { rule->name, (int)strlen(rule->name), SIG_METHOD, 1, false };
+  callSignature(compiler, CODE_BINOP_CALL, &signature);
 }
 
 // Compiles a method signature for an infix operator.
@@ -2445,6 +2476,7 @@ void infixSignature(Compiler* compiler, Signature* signature)
   // Add the RHS parameter.
   signature->type = SIG_METHOD;
   signature->arity = 1;
+  signature->isBinaryOp = true;
 
   // Parse the parameter name.
   consume(compiler, TOKEN_LEFT_PAREN, "Expect '(' after operator name.");
@@ -2457,6 +2489,7 @@ void unarySignature(Compiler* compiler, Signature* signature)
 {
   // Do nothing. The name is already complete.
   signature->type = SIG_GETTER;
+  signature->isBinaryOp = false;
 }
 
 // Compiles a method signature for an operator that can either be unary or
@@ -2464,10 +2497,13 @@ void unarySignature(Compiler* compiler, Signature* signature)
 void mixedSignature(Compiler* compiler, Signature* signature)
 {
   signature->type = SIG_GETTER;
+  signature->isBinaryOp = false;
 
   // If there is a parameter, it's an infix operator, otherwise it's unary.
   if (match(compiler, TOKEN_LEFT_PAREN))
   {
+    signature->isBinaryOp = true;
+
     // Add the RHS parameter.
     signature->type = SIG_METHOD;
     signature->arity = 1;
@@ -3054,7 +3090,7 @@ void statement(Compiler* compiler)
       expression(compiler);
     }
 
-    emitOp(compiler, CODE_RETURN);
+    emitReturn(compiler);
   }
   else if (match(compiler, TOKEN_WHILE))
   {
@@ -3108,7 +3144,7 @@ static void createConstructor(Compiler* compiler, Signature* signature,
                initializerSymbol);
   
   // Return the instance.
-  emitOp(&methodCompiler, CODE_RETURN);
+  emitReturn(&methodCompiler);
   
   endCompiler(&methodCompiler, "", 0);
 }
@@ -3166,6 +3202,7 @@ static bool method(Compiler* compiler, Variable classVariable)
 {
   // TODO: What about foreign constructors?
   bool isForeign = match(compiler, TOKEN_FOREIGN);
+  bool isReverse = match(compiler, TOKEN_REVERSE);
   bool isStatic = match(compiler, TOKEN_STATIC);
   compiler->enclosingClass->inStatic = isStatic;
     
@@ -3180,6 +3217,7 @@ static bool method(Compiler* compiler, Variable classVariable)
   
   // Build the method signature.
   Signature signature = signatureFromToken(compiler, SIG_GETTER);
+  signature.isReverse = isReverse;
   compiler->enclosingClass->signature = &signature;
 
   Compiler methodCompiler;
@@ -3191,6 +3229,10 @@ static bool method(Compiler* compiler, Variable classVariable)
   if (isStatic && signature.type == SIG_INITIALIZER)
   {
     error(compiler, "A constructor cannot be static.");
+  }
+  if (isReverse && !signature.isBinaryOp)
+  {
+    error(compiler, "Only binary operators can be reverse.");
   }
   
   // Include the full signature in debug messages in stack traces.
@@ -3493,7 +3535,7 @@ ObjFn* wrenCompile(WrenVM* vm, ObjModule* module, const char* source,
     emitOp(&compiler, CODE_END_MODULE);
   }
   
-  emitOp(&compiler, CODE_RETURN);
+  emitReturn(&compiler);
 
   // See if there are any implicitly declared module-level variables that never
   // got an explicit definition. They will have values that are numbers
