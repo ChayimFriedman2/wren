@@ -5,7 +5,7 @@
 
 // Binds a primitive method named [name] (in Wren) implemented using C function
 // [fn] to `ObjClass` [cls].
-#define PRIMITIVE(cls, name, function)                                         \
+#define PRIMITIVE(cls, name, function, reverse)                                \
     do                                                                         \
     {                                                                          \
       int symbol = wrenSymbolTableEnsure(vm,                                   \
@@ -13,6 +13,7 @@
       Method method;                                                           \
       method.type = METHOD_PRIMITIVE;                                          \
       method.as.primitive = prim_##function;                                   \
+      method.isReverse = reverse;                                              \
       wrenBindMethod(vm, cls, symbol, method);                                 \
     } while (false)
 

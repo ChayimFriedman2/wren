@@ -184,7 +184,8 @@ OPCODE(CLASS, -1)
 OPCODE(FOREIGN_CLASS, -1)
 
 // Define a method for symbol [arg]. The class receiving the method is popped
-// off the stack, then the function defining the body is popped.
+// off the stack, then the function defining the body is popped. The 2nd arg
+// is true for reverse operators, and false otherwise.
 //
 // If a foreign method is being defined, the "function" will be a string
 // identifying the foreign method. Otherwise, it will be a function or
@@ -193,7 +194,7 @@ OPCODE(METHOD_INSTANCE, -2)
 
 // Define a method for symbol [arg]. The class whose metaclass will receive
 // the method is popped off the stack, then the function defining the body is
-// popped.
+// popped. The 2nd arg is true for reverse operators, and false otherwise.
 //
 // If a foreign method is being defined, the "function" will be a string
 // identifying the foreign method. Otherwise, it will be a function or

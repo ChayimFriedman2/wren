@@ -388,6 +388,9 @@ typedef struct
     WrenForeignMethodFn foreign;
     ObjClosure* closure;
   } as;
+
+  // This is true for reverse binary operators.
+  bool isReverse;
 } Method;
 
 DECLARE_BUFFER(Method, Method);
@@ -407,8 +410,8 @@ struct sObjClass
   // the list for methods the class doesn't support.
   //
   // You can think of it as a hash table that never has collisions but has a
-  // really low load factor. Since methods are pretty small (just a type and a
-  // pointer), this should be a worthwhile trade-off.
+  // really low load factor. Since methods are pretty small (just a type, a
+  // boolean and a pointer), this should be a worthwhile trade-off.
   MethodBuffer methods;
 
   // The name of the class.

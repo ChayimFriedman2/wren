@@ -2799,11 +2799,13 @@ static int getByteCountForArguments(const uint8_t* bytecode,
     case CODE_JUMP_IF:
     case CODE_AND:
     case CODE_OR:
-    case CODE_METHOD_INSTANCE:
-    case CODE_METHOD_STATIC:
     case CODE_IMPORT_MODULE:
     case CODE_IMPORT_VARIABLE:
       return 2;
+
+    case CODE_METHOD_INSTANCE:
+    case CODE_METHOD_STATIC:
+      return 3;
 
     case CODE_SUPER_0:
     case CODE_SUPER_1:
@@ -3152,7 +3154,7 @@ static void createConstructor(Compiler* compiler, Signature* signature,
 // Loads the enclosing class onto the stack and then binds the function already
 // on the stack as a method on that class.
 static void defineMethod(Compiler* compiler, Variable classVariable,
-                         bool isStatic, int methodSymbol)
+                         bool isReverse, bool isStatic, int methodSymbol)
 {
   // Load the class. We have to do this for each method because we can't
   // keep the class on top of the stack. If there are static fields, they
@@ -3164,6 +3166,7 @@ static void defineMethod(Compiler* compiler, Variable classVariable,
   // Define the method.
   Code instruction = isStatic ? CODE_METHOD_STATIC : CODE_METHOD_INSTANCE;
   emitShortArg(compiler, instruction, methodSymbol);
+  emitByte(compiler, isReverse);
 }
 
 // Declares a method in the enclosing class with [signature].
